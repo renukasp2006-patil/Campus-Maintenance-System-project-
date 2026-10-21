@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Registration</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container card">
+
+    <h1>Student Registration</h1>
+
+    <form id="registerForm">
+
+        <label>Username</label>
+        <input type="text" id="username" required>
+
+        <label>Password</label>
+        <input type="password" id="password" required>
+
+        <button type="submit">Register</button>
+
+    </form>
+
+    <p id="message"></p>
+
+    <a href="login.html">Already have an account? Login</a>
+
+</div>
+
+<script>
+
+document.getElementById("registerForm").addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+
+        const response = await fetch("http://127.0.0.1:5000/api/register", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+
+        });
+
+        const data = await response.json();
+
+        document.getElementById("message").innerText = data.message;
+
+        if (response.ok) {
+
+            setTimeout(function() {
+                window.location.href = "login.html";
+            }, 1000);
+
+        }
+
+    } catch (error) {
+
+        document.getElementById("message").innerText =
+            "Backend connection failed!";
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>

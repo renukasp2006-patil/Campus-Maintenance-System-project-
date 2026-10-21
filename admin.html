@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Campus Maintenance</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Campus Maintenance Request System</h1>
+<h2>Admin Dashboard</h2>
+<p><b>Welcome, Admin</b></p>
+
+<hr>
+
+<h3>Latest Maintenance Request</h3>
+
+<p><b>Request ID:</b> <span id="requestId">No Request</span></p>
+<p><b>Student Name:</b> <span id="studentName">-</span></p>
+<p><b>Student Mobile:</b> <span id="studentMobile">-</span></p>
+<p><b>Student Email:</b> <span id="studentEmail">-</span></p>
+<p><b>Teacher Mobile:</b> <span id="teacherMobile">-</span></p>
+<p><b>Teacher Email:</b> <span id="teacherEmail">-</span></p>
+<p><b>Category:</b> <span id="category">-</span></p>
+<p><b>Location:</b> <span id="location">-</span></p>
+<p><b>Problem:</b> <span id="problem">-</span></p>
+<p><b>Date:</b> <span id="date">-</span></p>
+
+<hr>
+
+<h3>Request Approval and Work Status</h3>
+
+<p>Select a request and approve it before updating its work status.</p>
+
+<button type="button" id="acceptButton" onclick="acceptRequest()">
+    Accept Request
+</button>
+
+<p><b>Approval Status:</b> <span id="approvalStatus">Pending</span></p>
+
+<br>
+
+<label for="status">Work Status:</label>
+
+<select id="status">
+    <option value="Pending">Pending</option>
+    <option value="In Progress">In Progress</option>
+    <option value="Completed">Completed</option>
+</select>
+
+<button type="button" onclick="updateStatus()">
+    Update Work Status
+</button>
+
+<p><b>Current Status:</b> <span id="currentStatus">Pending</span></p>
+<p id="message"></p>
+
+<hr>
+
+<h3>Latest Requests</h3>
+<div id="requestList">Loading requests...</div>
+
+<hr>
+
+<h3>Status Flow</h3>
+<p>1. Student submits request - Pending</p>
+<p>2. Sir accepts request - Accepted</p>
+<p>3. Maintenance work starts - In Progress</p>
+<p>4. Work is completed - Completed</p>
+
+<br>
+<a href="status.html">View Request Status</a>
+<br><br>
+<a href="request.html">Submit New Request</a>
+<br><br>
+<a href="index.html">Back to Home</a>
+
+<script>
+let selectedRequestId = null;
+let selectedRequest = null;
+
+async function loadRequests() {
+    const list = document.getElementById("requestList");
+    const message = document.getElementById("message");
+
+    try {
+        const response = await fetch("/api/requests");
+
+        if (!response.ok) {
+            throw new Error("Could not load requests.");
+        }
+
+        const requests = await response.json();
+        list.replaceChildren();
+
+        if (requests.length === 0) {
+            selectedRequestId = null;
+            selectedRequest = null;
+            list.textContent = "No maintenance requests submitted yet.";
+            return;
+        }
+
+        requests.forEach(function(item) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent =
+                "CR" + String(item.id).padStart(3, "0") +
+                " - " + item.student_name + " (" + item.status + ")";
+
+            button.style.display = "block";
+            button.style.margin = "8px 0";
+
+            button.addEventListener("click", function() {
+                displayRequest(item);
+            });
+
+            list.appendChild(button);
+        });
+
+        if (selectedRequestId !== null) {
+            const updated = requests.find(
+                item => item.id === selectedRequestId
+            );
+
+            if (updated) {
+                displayRequest(updated);
+            } else {
+                displayRequest(requests[0]);
+            }
+        } else {
+            displayRequest(requests[0]);
+        }
+
+        message.textContent = "";
+    } catch (error) {
+        message.textContent =
+            "Could not load requests. Check that server.py is running.";
+        list.textContent = "Unable to load requests.";
+    }
+}
+
+function displayRequest(item) {
+    selectedRequestId = item.id;
+    selectedRequest = item;
+
+    document.getElementById("requestId").textContent =
+        "CR" + String(item.id).padStart(3, "0");
+
+    document.getElementById("studentName").textContent =
+        item.student_name || "-";
+    document.getElementById("studentMobile").textContent =
+        item.student_mobile || "-";
+    document.getElementById("studentEmail").textContent =
+        item.student_email || "-";
+    document.getElementById("teacherMobile").textContent =
+        item.teacher_mobile || "-";
+    document.getElementById("teacherEmail").textContent =
+        item.teacher_email || "-";
+    document.getElementById("category").textContent =
+        item.category || "-";
+    document.getElementById("location").textContent =
+        item.location || "-";
+    document.getElementById("problem").textContent =
+        item.problem || "-";
+    document.getElementById("date").textContent =
+        item.date || "-";
+
+    document.getElementById("status").value =
+        item.status === "Completed" ? "Completed" :
+        item.status === "In Progress" ? "In Progress" : "Pending";
+
+    document.getElementById("currentStatus").textContent =
+        item.status || "Pending";
+
+    document.getElementById("approvalStatus").textContent =
+        item.status === "Pending" ? "Pending" :
+        item.status === "Rejected" ? "Rejected" : "Accepted";
+
+    document.getElementById("acceptButton").disabled =
+        item.status !== "Pending";
+}
+
+async function saveStatus(status) {
+    if (selectedRequestId === null) {
+        document.getElementById("message").textContent =
+            "Please select a request first.";
+        return false;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/requests/" + selectedRequestId,
+            {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({status: status})
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || "Status update failed.");
+        }
+
+        document.getElementById("message").textContent =
+            "Status updated successfully!";
+
+        await loadRequests();
+        return true;
+    } catch (error) {
+        document.getElementById("message").textContent =
+            error.message + " Check whether server.py allows this status.";
+        return false;
+    }
+}
+
+async function acceptRequest() {
+    if (!selectedRequest) {
+        document.getElementById("message").textContent =
+            "Please select a request first.";
+        return;
+    }
+
+    if (selectedRequest.status !== "Pending") {
+        document.getElementById("message").textContent =
+            "Only Pending requests can be accepted.";
+        return;
+    }
+
+    const success = await saveStatus("Accepted");
+
+    if (success) {
+        document.getElementById("message").textContent =
+            "Request accepted successfully!";
+    }
+}
+
+async function updateStatus() {
+    if (!selectedRequest) {
+        document.getElementById("message").textContent =
+            "Please select a request first.";
+        return;
+    }
+
+    if (selectedRequest.status === "Pending") {
+        document.getElementById("message").textContent =
+            "Sir must accept the request first.";
+        return;
+    }
+
+    const status = document.getElementById("status").value;
+    await saveStatus(status);
+}
+
+loadRequests();
+</script>
+
+</body>
+</html>

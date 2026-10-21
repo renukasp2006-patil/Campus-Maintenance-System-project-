@@ -1,0 +1,108 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Campus Maintenance Request</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<h1>Campus Maintenance Request System</h1>
+<h2>Submit Maintenance Request</h2>
+
+<form id="requestForm">
+
+    <label>Student Name:</label><br>
+    <input type="text" id="studentName" required><br><br>
+
+    <label>Student Mobile Number:</label><br>
+    <input type="tel" id="studentMobile" required><br><br>
+
+    <label>Student Email:</label><br>
+    <input type="email" id="studentEmail" required><br><br>
+
+    <label>Teacher Mobile Number:</label><br>
+    <input type="tel" id="teacherMobile" required><br><br>
+
+    <label>Teacher Email:</label><br>
+    <input type="email" id="teacherEmail" required><br><br>
+
+    <label>Problem Category:</label><br>
+    <select id="category" required>
+        <option value="">Select Category</option>
+        <option>Electrical</option>
+        <option>Water</option>
+        <option>Computer / Lab</option>
+        <option>Furniture</option>
+        <option>Cleaning</option>
+        <option>Washroom</option>
+        <option>Canteen</option>
+        <option>Other</option>
+    </select><br><br>
+
+    <label>Location:</label><br>
+    <input type="text" id="location" required><br><br>
+
+    <label>Problem Description:</label><br>
+    <textarea id="problem" rows="5" required></textarea><br><br>
+
+    <label>Date:</label><br>
+    <input type="date" id="date" required><br><br>
+
+    <button type="submit">Submit Request</button>
+</form>
+
+<p id="message"></p>
+
+<a href="status.html">Check Request Status</a><br><br>
+<a href="index.html">Back to Home</a>
+
+<script>
+document.getElementById("requestForm").addEventListener("submit",
+async function(event) {
+    event.preventDefault();
+
+    const data = {
+        student_name: document.getElementById("studentName").value,
+        student_mobile: document.getElementById("studentMobile").value,
+        student_email: document.getElementById("studentEmail").value,
+        teacher_mobile: document.getElementById("teacherMobile").value,
+        teacher_email: document.getElementById("teacherEmail").value,
+        category: document.getElementById("category").value,
+        location: document.getElementById("location").value,
+        problem: document.getElementById("problem").value,
+        date: document.getElementById("date").value
+    };
+
+    const message = document.getElementById("message");
+    message.textContent = "Submitting request...";
+
+    try {
+        const response = await fetch("/api/requests", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        message.textContent = result.message ||
+            (response.ok ? "Request submitted successfully!" :
+            "Request submit nahi zali.");
+
+        if (response.ok) {
+            localStorage.setItem("studentName", data.student_name);
+            localStorage.setItem("category", data.category);
+            localStorage.setItem("location", data.location);
+            localStorage.setItem("problem", data.problem);
+            localStorage.setItem("date", data.date);
+        }
+    } catch (error) {
+        message.textContent =
+            "Request submit nahi zali. Flask server check kara.";
+    }
+});
+</script>
+
+</body>
+</html>
+```

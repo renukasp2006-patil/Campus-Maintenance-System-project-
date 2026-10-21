@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Status</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Campus Maintenance Request System</h1>
+<h2>Request Status</h2>
+
+<p>
+    <label for="requestSelect"><b>Select Request:</b></label>
+    <select id="requestSelect">
+        <option value="">Loading requests...</option>
+    </select>
+</p>
+
+<p><b>Request ID:</b> <span id="requestId">-</span></p>
+<p><b>Student Name:</b> <span id="studentName">-</span></p>
+<p><b>Category:</b> <span id="category">-</span></p>
+<p><b>Location:</b> <span id="location">-</span></p>
+<p><b>Problem:</b> <span id="problem">-</span></p>
+<p><b>Date:</b> <span id="date">-</span></p>
+
+<h3>Status: <span id="status">-</span></h3>
+<p id="message"></p>
+
+<hr>
+<h3>Status Flow</h3>
+<p>📝 Request Submitted</p>
+<p>⏳ Pending</p>
+<p>🔧 In Progress</p>
+<p>✅ Completed</p>
+
+<br>
+<a href="request.html">Submit New Request</a>
+<br><br>
+<a href="index.html">Back to Home</a>
+
+<script>
+let requests = [];
+
+function showRequest(item) {
+    if (!item) return;
+
+    document.getElementById("requestId").textContent =
+        "CR" + String(item.id).padStart(3, "0");
+    document.getElementById("studentName").textContent =
+        item.student_name || "-";
+    document.getElementById("category").textContent =
+        item.category || "-";
+    document.getElementById("location").textContent =
+        item.location || "-";
+    document.getElementById("problem").textContent =
+        item.problem || "-";
+    document.getElementById("date").textContent =
+        item.date || "-";
+    document.getElementById("status").textContent =
+        item.status || "Pending";
+}
+
+async function loadRequests() {
+    const select = document.getElementById("requestSelect");
+    const message = document.getElementById("message");
+
+    try {
+        const response = await fetch("/api/requests");
+        if (!response.ok) throw new Error("Could not load requests.");
+
+        requests = await response.json();
+        select.replaceChildren();
+
+        if (requests.length === 0) {
+            select.add(new Option("No requests found", ""));
+            message.textContent = "Submit a maintenance request first.";
+            return;
+        }
+
+        requests.forEach(function(item) {
+            select.add(new Option(
+                "CR" + String(item.id).padStart(3, "0") +
+                " - " + item.student_name,
+                item.id
+            ));
+        });
+
+        select.addEventListener("change", function() {
+            const item = requests.find(
+                request => String(request.id) === select.value
+            );
+            showRequest(item);
+        });
+
+        showRequest(requests[0]);
+        message.textContent = "";
+    } catch (error) {
+        message.textContent =
+            "Unable to load requests. Make sure server.py is running.";
+    }
+}
+
+loadRequests();
+</script>
+
+</body>
+</html>
