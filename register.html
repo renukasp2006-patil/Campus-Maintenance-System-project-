@@ -1,6 +1,9 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Registration</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,13 +16,13 @@
 
     <form id="registerForm">
 
-        <label>Username</label>
+        <label for="username">Username</label>
         <input type="text" id="username" required>
 
-        <label>Password</label>
+        <label for="password">Password</label>
         <input type="password" id="password" required>
 
-        <button type="submit">Register</button>
+        <button type="submit" id="registerButton">Register</button>
 
     </form>
 
@@ -30,52 +33,64 @@
 </div>
 
 <script>
+const BACKEND_URL =
+    "https://campus-maintenance-system-project.onrender.com";
 
-document.getElementById("registerForm").addEventListener("submit", async function(event) {
+document.getElementById("registerForm").addEventListener(
+    "submit",
+    async function(event) {
 
-    event.preventDefault();
+        event.preventDefault();
 
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+        const username =
+            document.getElementById("username").value.trim();
 
-    try {
+        const password =
+            document.getElementById("password").value;
 
-        const response = await fetch("http://127.0.0.1:5000/api/register", {
+        const message = document.getElementById("message");
+        const button = document.getElementById("registerButton");
 
-            method: "POST",
+        message.innerText = "Please wait...";
+        button.disabled = true;
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+        try {
+            const response = await fetch(
+                BACKEND_URL + "/api/register",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                }
+            );
 
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
+            const data = await response.json();
 
-        });
+            message.innerText =
+                data.message || data.error ||
+                (response.ok
+                    ? "Registration successful!"
+                    : "Registration failed. Please try again.");
 
-        const data = await response.json();
+            if (response.ok) {
+                setTimeout(function() {
+                    window.location.href = "login.html";
+                }, 1500);
+            }
 
-        document.getElementById("message").innerText = data.message;
-
-        if (response.ok) {
-
-            setTimeout(function() {
-                window.location.href = "login.html";
-            }, 1000);
-
+        } catch (error) {
+            message.innerText =
+                "Backend connection failed! Please try again later.";
+        } finally {
+            button.disabled = false;
         }
-
-    } catch (error) {
-
-        document.getElementById("message").innerText =
-            "Backend connection failed!";
-
     }
-
-});
-
+);
 </script>
 
 </body>
