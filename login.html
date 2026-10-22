@@ -1,38 +1,97 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Campus Maintenance</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>Campus Maintenance Request System</h1>
+    <div class="container card">
+        <h1>Campus Maintenance Request System</h1>
+        <h2>Login</h2>
 
-    <h2>Login</h2>
+        <form id="loginForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username"
+                   placeholder="Enter Username" required>
 
-    <form>
-        <label>Username:</label><br>
-        <input type="text" placeholder="Enter Username">
+            <label for="password">Password:</label>
+            <input type="password" id="password"
+                   placeholder="Enter Password" required>
+
+            <button type="submit" id="loginButton">Login</button>
+        </form>
+
+        <p id="message"></p>
+
+        <p>Don't have an account?</p>
+        <a href="register.html">Register</a>
         <br><br>
+        <a href="index.html">Back to Home</a>
+    </div>
 
-        <label>Password:</label><br>
-        <input type="password" placeholder="Enter Password">
-        <br><br>
-<a href="request.html">
-    <button type="button">Login</button>
-</a>
-        
- <br><br>
+    <script>
+    const BACKEND_URL =
+        "https://campus-maintenance-system-project.onrender.com";
 
-    <p>Don't have an account?</p>
+    document.getElementById("loginForm").addEventListener(
+        "submit", async function(event) {
+            event.preventDefault();
 
-    <a href="register.html">
-        <button type="button">Register</button>
-    </a>
+            const username =
+                document.getElementById("username").value.trim();
+            const password =
+                document.getElementById("password").value;
+            const message = document.getElementById("message");
+            const button = document.getElementById("loginButton");
 
-    <br><br>
+            message.innerText = "Please wait...";
+            button.disabled = true;
 
-    <a href="index.html">Back to Home</a>
+            try {
+                const response = await fetch(
+                    BACKEND_URL + "/api/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    message.innerText = "Login successful!";
+
+                    sessionStorage.setItem(
+                        "loggedInUsername", data.username
+                    );
+
+                    setTimeout(function() {
+                        window.location.href = "request.html";
+                    }, 700);
+                } else {
+                    message.innerText =
+                        data.message || "Invalid username or password!";
+                }
+
+            } catch (error) {
+                message.innerText =
+                    "Backend connection failed! Please try again.";
+            } finally {
+                button.disabled = false;
+            }
+        }
+    );
+    </script>
 
 </body>
 </html>
