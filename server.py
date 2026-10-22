@@ -1,9 +1,11 @@
 
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 import sqlite3
 import os
 
 app = Flask(__name__)
+CORS(app)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, "campus.db")
@@ -40,7 +42,7 @@ def create_database():
 
     existing = {
         row["name"]
-        for row in conn.execute("PRAGMA table_info(requests)")
+        for row in conn.execute("PRAGMA table_info(requests)").fetchall()
     }
 
     columns = {
@@ -58,6 +60,10 @@ def create_database():
 
     conn.commit()
     conn.close()
+
+
+# Initialize the database when Render starts the app
+create_database()
 
 
 @app.route("/")
@@ -113,12 +119,13 @@ def login():
 
     conn = get_db()
 
-    user = conn.execute(
-        "SELECT * FROM users WHERE username=? AND password=?",
-        (username, password)
-    ).fetchone()
-
-    conn.close()
+    try:
+        user = conn.execute(
+            "SELECT * FROM users WHERE username=? AND password=?",
+            (username, password)
+        ).fetchone()
+    finally:
+        conn.close()
 
     if user:
         return jsonify({
@@ -135,24 +142,28 @@ def login():
 def add_request():
     data = request.get_json(silent=True) or {}
 
-    fields = [
-        "student_name",
-        "student_mobile",
-        "student_email",
-        "teacher_mobile",
-        "teacher_email",
-        "category",
-        "location",
-        "problem",
-        "date"
+    # Accept both camelCase and snake_case from the form
+    student_name = data.get("student_name") or data.get("studentName")
+    student_mobile = data.get("student_mobile") or data.get("studentMobile")
+    student_email = data.get("student_email") or data.get("studentEmail")
+    teacher_mobile = data.get("teacher_mobile") or data.get("teacherMobile")
+    teacher_email = data.get("teacher_email") or data.get("teacherEmail")
+
+    category = data.get("category")
+    location = data.get("location")
+    problem = data.get("problem")
+    date = data.get("date")
+
+    required_values = [
+        student_name, student_mobile, student_email,
+        teacher_mobile, teacher_email, category,
+        location, problem, date
     ]
 
-    values = [
-        str(data.get(field, "")).strip()
-        for field in fields
-    ]
-
-    if not all(values):
+    if not all(
+        isinstance(value, str) and value.strip()
+        for value in required_values
+    ):
         return jsonify({
             "message": "Please fill in all required fields."
         }), 400
@@ -173,13 +184,25 @@ def add_request():
                 date
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, values)
+        """, (
+            student_name.strip(),
+            student_mobile.strip(),
+            student_email.strip(),
+            teacher_mobile.strip(),
+            teacher_email.strip(),
+            category.strip(),
+            location.strip(),
+            problem.strip(),
+            date.strip()
+        ))
 
         conn.commit()
+        request_id = cursor.lastrowid
 
         return jsonify({
-            "message": "Maintenance request submitted!",
-            "request_id": cursor.lastrowid
+            "message": "Maintenance request submitted successfully!",
+            "request_id": request_id,
+            "status": "Pending"
         }), 201
 
     finally:
@@ -190,13 +213,15 @@ def add_request():
 def get_requests():
     conn = get_db()
 
-    rows = conn.execute(
-        "SELECT * FROM requests ORDER BY id DESC"
-    ).fetchall()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM requests ORDER BY id DESC"
+        ).fetchall()
 
-    conn.close()
+        return jsonify([dict(row) for row in rows])
 
-    return jsonify([dict(row) for row in rows])
+    finally:
+        conn.close()
 
 
 @app.route("/api/requests/<int:request_id>", methods=["PUT"])
@@ -263,13 +288,8 @@ def get_request(request_id):
 
 
 if __name__ == "__main__":
-    create_database()
-
-    print("Database connected successfully!")
-    print("Campus Maintenance Backend Started!")
-
     app.run(
         host="0.0.0.0",
-        port=5000,
-        debug=True
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False
     )
