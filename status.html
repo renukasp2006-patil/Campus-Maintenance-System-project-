@@ -4,8 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Status</title>
+    <title>Request Status - Campus Maintenance</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 15px;
+        }
+        select, button {
+            padding: 10px;
+            margin: 5px 0;
+            max-width: 100%;
+        }
+        #status {
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 
@@ -19,6 +33,10 @@
     </select>
 </p>
 
+<button type="button" onclick="loadRequests()">Refresh Requests</button>
+
+<hr>
+
 <p><b>Request ID:</b> <span id="requestId">-</span></p>
 <p><b>Student Name:</b> <span id="studentName">-</span></p>
 <p><b>Category:</b> <span id="category">-</span></p>
@@ -27,12 +45,14 @@
 <p><b>Date:</b> <span id="date">-</span></p>
 
 <h3>Status: <span id="status">-</span></h3>
-<p id="message"></p>
+<p id="message" role="status"></p>
 
 <hr>
+
 <h3>Status Flow</h3>
 <p>📝 Request Submitted</p>
 <p>⏳ Pending</p>
+<p>👍 Accepted</p>
 <p>🔧 In Progress</p>
 <p>✅ Completed</p>
 
@@ -42,6 +62,8 @@
 <a href="index.html">Back to Home</a>
 
 <script>
+const API_URL = "https://campus-maintenance-system-project.onrender.com";
+
 let requests = [];
 
 function showRequest(item) {
@@ -49,16 +71,22 @@ function showRequest(item) {
 
     document.getElementById("requestId").textContent =
         "CR" + String(item.id).padStart(3, "0");
+
     document.getElementById("studentName").textContent =
-        item.student_name || "-";
+        item.student_name || item.studentName || "-";
+
     document.getElementById("category").textContent =
         item.category || "-";
+
     document.getElementById("location").textContent =
         item.location || "-";
+
     document.getElementById("problem").textContent =
         item.problem || "-";
+
     document.getElementById("date").textContent =
         item.date || "-";
+
     document.getElementById("status").textContent =
         item.status || "Pending";
 }
@@ -66,42 +94,67 @@ function showRequest(item) {
 async function loadRequests() {
     const select = document.getElementById("requestSelect");
     const message = document.getElementById("message");
+    const previousId = select.value;
+
+    message.textContent = "Loading requests...";
+    select.replaceChildren();
 
     try {
-        const response = await fetch("/api/requests");
-        if (!response.ok) throw new Error("Could not load requests.");
+        const response = await fetch(API_URL + "/api/requests");
+
+        if (!response.ok) {
+            throw new Error("Server returned " + response.status);
+        }
 
         requests = await response.json();
-        select.replaceChildren();
 
-        if (requests.length === 0) {
+        if (!Array.isArray(requests) || requests.length === 0) {
             select.add(new Option("No requests found", ""));
-            message.textContent = "Submit a maintenance request first.";
+            message.textContent = "No requests found. Please submit a request.";
             return;
         }
 
         requests.forEach(function(item) {
-            select.add(new Option(
-                "CR" + String(item.id).padStart(3, "0") +
-                " - " + item.student_name,
-                item.id
-            ));
-        });
+            const id = item.id ?? item.request_id;
 
-        select.addEventListener("change", function() {
-            const item = requests.find(
-                request => String(request.id) === select.value
+            const option = new Option(
+                "CR" + String(id).padStart(3, "0") +
+                " - " + (item.student_name || item.studentName || "Student") +
+                " (" + (item.status || "Pending") + ")",
+                String(id)
             );
-            showRequest(item);
+
+            select.add(option);
         });
 
-        showRequest(requests[0]);
-        message.textContent = "";
+        const chosen = requests.find(function(item) {
+            return String(item.id ?? item.request_id) === previousId;
+        });
+
+        const itemToShow = chosen || requests[0];
+        select.value = String(itemToShow.id ?? itemToShow.request_id);
+        showRequest(itemToShow);
+
+        message.textContent = "Requests loaded successfully.";
+
     } catch (error) {
+        select.replaceChildren();
+        select.add(new Option("Unable to load requests", ""));
         message.textContent =
-            "Unable to load requests. Make sure server.py is running.";
+            "Unable to load requests: " + error.message;
     }
 }
+
+document.getElementById("requestSelect").addEventListener("change", function() {
+    const item = requests.find(function(request) {
+        return String(request.id ?? request.request_id) === this.value;
+    }, this);
+
+    if (item) {
+        showRequest(item);
+        document.getElementById("message").textContent = "";
+    }
+});
 
 loadRequests();
 </script>
