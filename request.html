@@ -1,108 +1,216 @@
-```html
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Campus Maintenance Request</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Maintenance Request</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f5fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #0002;
+        }
+
+        h2 {
+            text-align: center;
+            color: #174a8b;
+        }
+
+        label {
+            display: block;
+            margin-top: 14px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 11px;
+            margin-top: 6px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 6px;
+            background: #174a8b;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #777;
+            cursor: wait;
+        }
+
+        #message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 18px;
+        }
+
+        .links a {
+            margin: 0 8px;
+            color: #174a8b;
+        }
+    </style>
 </head>
 <body>
 
-<h1>Campus Maintenance Request System</h1>
-<h2>Submit Maintenance Request</h2>
+<div class="container">
+    <h2>Campus Maintenance System</h2>
+    <h3>Submit Maintenance Request</h3>
 
-<form id="requestForm">
+    <form id="requestForm">
+        <label for="studentName">Student Name</label>
+        <input type="text" id="studentName" name="studentName" required>
 
-    <label>Student Name:</label><br>
-    <input type="text" id="studentName" required><br><br>
+        <label for="studentMobile">Student Mobile Number</label>
+        <input type="tel" id="studentMobile" name="studentMobile"
+               pattern="[0-9]{10}" maxlength="10"
+               placeholder="Enter 10-digit number" required>
 
-    <label>Student Mobile Number:</label><br>
-    <input type="tel" id="studentMobile" required><br><br>
+        <label for="studentEmail">Student Email</label>
+        <input type="email" id="studentEmail" name="studentEmail" required>
 
-    <label>Student Email:</label><br>
-    <input type="email" id="studentEmail" required><br><br>
+        <label for="teacherEmail">Teacher Email</label>
+        <input type="email" id="teacherEmail" name="teacherEmail" required>
 
-    <label>Teacher Mobile Number:</label><br>
-    <input type="tel" id="teacherMobile" required><br><br>
+        <label for="teacherMobile">Teacher Mobile Number</label>
+        <input type="tel" id="teacherMobile" name="teacherMobile"
+               pattern="[0-9]{10}" maxlength="10"
+               placeholder="Enter 10-digit number" required>
 
-    <label>Teacher Email:</label><br>
-    <input type="email" id="teacherEmail" required><br><br>
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+            <option value="">Select Category</option>
+            <option value="Computer / Lab">Computer / Lab</option>
+            <option value="Electricity">Electricity</option>
+            <option value="Water">Water</option>
+            <option value="Furniture">Furniture</option>
+            <option value="Classroom">Classroom</option>
+            <option value="Canteen">Canteen</option>
+            <option value="Other">Other</option>
+        </select>
 
-    <label>Problem Category:</label><br>
-    <select id="category" required>
-        <option value="">Select Category</option>
-        <option>Electrical</option>
-        <option>Water</option>
-        <option>Computer / Lab</option>
-        <option>Furniture</option>
-        <option>Cleaning</option>
-        <option>Washroom</option>
-        <option>Canteen</option>
-        <option>Other</option>
-    </select><br><br>
+        <label for="location">Location</label>
+        <input type="text" id="location" name="location"
+               placeholder="e.g. Lab 1, Classroom 2, Canteen" required>
 
-    <label>Location:</label><br>
-    <input type="text" id="location" required><br><br>
+        <label for="problem">Problem Description</label>
+        <textarea id="problem" name="problem"
+                  placeholder="Describe the maintenance problem"
+                  required></textarea>
 
-    <label>Problem Description:</label><br>
-    <textarea id="problem" rows="5" required></textarea><br><br>
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" required>
 
-    <label>Date:</label><br>
-    <input type="date" id="date" required><br><br>
+        <button type="submit" id="submitBtn">Submit Request</button>
+    </form>
 
-    <button type="submit">Submit Request</button>
-</form>
+    <p id="message" role="status" aria-live="polite"></p>
 
-<p id="message"></p>
-
-<a href="status.html">Check Request Status</a><br><br>
-<a href="index.html">Back to Home</a>
+    <div class="links">
+        <a href="status.html">Check Request Status</a>
+        <a href="index.html">Home</a>
+    </div>
+</div>
 
 <script>
-document.getElementById("requestForm").addEventListener("submit",
-async function(event) {
-    event.preventDefault();
+    const API_URL =
+        "https://campus-maintenance-system-project.onrender.com";
 
-    const data = {
-        student_name: document.getElementById("studentName").value,
-        student_mobile: document.getElementById("studentMobile").value,
-        student_email: document.getElementById("studentEmail").value,
-        teacher_mobile: document.getElementById("teacherMobile").value,
-        teacher_email: document.getElementById("teacherEmail").value,
-        category: document.getElementById("category").value,
-        location: document.getElementById("location").value,
-        problem: document.getElementById("problem").value,
-        date: document.getElementById("date").value
-    };
-
+    const form = document.getElementById("requestForm");
     const message = document.getElementById("message");
-    message.textContent = "Submitting request...";
+    const submitBtn = document.getElementById("submitBtn");
 
-    try {
-        const response = await fetch("/api/requests", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(data)
-        });
+    document.getElementById("date").value =
+        new Date().toLocaleDateString("en-CA");
 
-        const result = await response.json();
-        message.textContent = result.message ||
-            (response.ok ? "Request submitted successfully!" :
-            "Request submit nahi zali.");
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
 
-        if (response.ok) {
-            localStorage.setItem("studentName", data.student_name);
-            localStorage.setItem("category", data.category);
-            localStorage.setItem("location", data.location);
-            localStorage.setItem("problem", data.problem);
-            localStorage.setItem("date", data.date);
+        const data = {
+            studentName: document.getElementById("studentName").value.trim(),
+            studentMobile: document.getElementById("studentMobile").value.trim(),
+            studentEmail: document.getElementById("studentEmail").value.trim(),
+            teacherEmail: document.getElementById("teacherEmail").value.trim(),
+            teacherMobile: document.getElementById("teacherMobile").value.trim(),
+            category: document.getElementById("category").value,
+            location: document.getElementById("location").value.trim(),
+            problem: document.getElementById("problem").value.trim(),
+            date: document.getElementById("date").value
+        };
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+        message.textContent = "Please wait...";
+        message.style.color = "#174a8b";
+
+        try {
+            const response = await fetch(API_URL + "/api/requests", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || "Request submission failed.");
+            }
+
+            message.style.color = "green";
+            message.textContent =
+                "Request submitted successfully! Request ID: " +
+                result.request_id + " | Status: Pending";
+
+            form.reset();
+            document.getElementById("date").value =
+                new Date().toLocaleDateString("en-CA");
+
+        } catch (error) {
+            message.style.color = "red";
+            message.textContent =
+                "Request submit nahi zali: " + error.message +
+                ". Please check the server and try again.";
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit Request";
         }
-    } catch (error) {
-        message.textContent =
-            "Request submit nahi zali. Flask server check kara.";
-    }
-});
+    });
 </script>
 
 </body>
 </html>
-```
