@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Maintenance Request</title>
     <link rel="stylesheet" href="style.css">
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,6 +43,10 @@
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 15px;
+        }
+
+        input[readonly] {
+            background: #f0f0f0;
         }
 
         textarea {
@@ -84,6 +89,7 @@
         }
     </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -91,8 +97,10 @@
     <h3>Submit Maintenance Request</h3>
 
     <form id="requestForm">
+
         <label for="studentName">Student Name</label>
-        <input type="text" id="studentName" name="studentName" required>
+        <input type="text" id="studentName" name="studentName"
+               readonly required>
 
         <label for="studentMobile">Student Mobile Number</label>
         <input type="tel" id="studentMobile" name="studentMobile"
@@ -152,22 +160,55 @@
     const form = document.getElementById("requestForm");
     const message = document.getElementById("message");
     const submitBtn = document.getElementById("submitBtn");
+    const studentNameInput = document.getElementById("studentName");
 
-    document.getElementById("date").value =
-        new Date().toLocaleDateString("en-CA");
+    // Get the username saved during login
+    const loggedInUsername =
+        sessionStorage.getItem("loggedInUsername");
+
+    if (!loggedInUsername) {
+        alert("Please login first!");
+        window.location.replace("login.html");
+    } else {
+        studentNameInput.value = loggedInUsername;
+    }
+
+    // Set today's date
+    function setTodayDate() {
+        const today = new Date();
+        const localDate = new Date(
+            today.getTime() - today.getTimezoneOffset() * 60000
+        ).toISOString().split("T")[0];
+
+        document.getElementById("date").value = localDate;
+    }
+
+    setTodayDate();
 
     form.addEventListener("submit", async function(event) {
         event.preventDefault();
 
+        if (!sessionStorage.getItem("loggedInUsername")) {
+            alert("Please login first!");
+            window.location.href = "login.html";
+            return;
+        }
+
         const data = {
-            studentName: document.getElementById("studentName").value.trim(),
-            studentMobile: document.getElementById("studentMobile").value.trim(),
-            studentEmail: document.getElementById("studentEmail").value.trim(),
-            teacherEmail: document.getElementById("teacherEmail").value.trim(),
-            teacherMobile: document.getElementById("teacherMobile").value.trim(),
+            studentName: studentNameInput.value.trim(),
+            studentMobile:
+                document.getElementById("studentMobile").value.trim(),
+            studentEmail:
+                document.getElementById("studentEmail").value.trim(),
+            teacherEmail:
+                document.getElementById("teacherEmail").value.trim(),
+            teacherMobile:
+                document.getElementById("teacherMobile").value.trim(),
             category: document.getElementById("category").value,
-            location: document.getElementById("location").value.trim(),
-            problem: document.getElementById("problem").value.trim(),
+            location:
+                document.getElementById("location").value.trim(),
+            problem:
+                document.getElementById("problem").value.trim(),
             date: document.getElementById("date").value
         };
 
@@ -188,7 +229,9 @@
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || "Request submission failed.");
+                throw new Error(
+                    result.message || "Request submission failed."
+                );
             }
 
             message.style.color = "green";
@@ -197,8 +240,12 @@
                 result.request_id + " | Status: Pending";
 
             form.reset();
-            document.getElementById("date").value =
-                new Date().toLocaleDateString("en-CA");
+
+            // Keep the logged-in username after resetting the form
+            studentNameInput.value =
+                sessionStorage.getItem("loggedInUsername") || "";
+
+            setTodayDate();
 
         } catch (error) {
             message.style.color = "red";
